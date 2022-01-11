@@ -1,4 +1,5 @@
-﻿using System;
+﻿using EmptyFiles;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -98,9 +99,9 @@ namespace Mod_9
         /// поиск, отправка фото
         /// </summary>
         /// <param name="a">chat ID</param>
-        private async void WorkingWithPhotos(long a)
+        private async void WorkingWithFile(long a, string type)
         {
-            string[] fotoList = Directory.GetFiles(@"D:\File\", "*.Jpeg");
+            string[] fotoList = Directory.GetFiles(@"D:\File\", type);
             Dictionary<int, string> path = new Dictionary<int, string>();
             int inckrement = 0;
             if (fotoList.Length == 0)
@@ -133,13 +134,16 @@ namespace Mod_9
                     await _client.SendTextMessageAsync(id, "Привет", replyMarkup: GetButtonse());
                     break;
                 case "Архив Фото":
-                    WorkingWithPhotos(id);
+                    WorkingWithFile(id, "*.jpeg");
                     break;
                 case "Аудио сообщение":
+                    WorkingWithFile(id, "*.audio");
                     break;
                 case "Документы":
+                    WorkingWithDocuments();
                     break;
                 case "Видео":
+                    WorkingWithFile(id, "*.video");
                     break;
                 default:
                     await _client.SendTextMessageAsync(id, "Привет, я не понимаю тебя, возможно я еще не умею делать то чего ты хочешь, обратись к моему создателю и возможно он научит меня тому что тебе нужно:) для Запуска нажми: start",
@@ -154,16 +158,25 @@ namespace Mod_9
                 case Telegram.Bot.Types.Enums.MessageType.Photo:
                     string fileNamePhote = e.Message.Photo[e.Message.Photo.Length - 1].FileUniqueId + ".jpeg";
                     string fileIdPhoto = e.Message.Photo[e.Message.Photo.Length - 1].FileId;
-                    Console.WriteLine(fileIdPhoto);
+                    Console.WriteLine($"Название фото: {fileIdPhoto}");
                     DownLoadFile(fileIdPhoto, fileNamePhote);
                     await _client.SendTextMessageAsync(e.Message.Chat.Id, "Фото загружено");
                     break;
-                case Telegram.Bot.Types.Enums.MessageType.Audio:
-
-                    break;
                 case Telegram.Bot.Types.Enums.MessageType.Video:
+                    string formatVideo = e.Message.Video.MimeType;
+                    formatVideo = new string(formatVideo.TakeWhile(x => x != '/').ToArray());
+                    string nameVideo = e.Message.Video.FileName + $".{formatVideo}";
+                    string idVideo = e.Message.Video.FileId;
+                    Console.WriteLine($"Название видео: {nameVideo}");
+                    DownLoadFile(idVideo,nameVideo);
                     break;
                 case Telegram.Bot.Types.Enums.MessageType.Voice:
+                    string formatVoice = e.Message.Voice.MimeType;
+                    formatVoice = new string(formatVoice.TakeWhile(x => x != '/').ToArray());
+                    string nameVoice = Convert.ToString(e.Message.MessageId) + $".{formatVoice}";
+                    string idVoice = e.Message.Voice.FileId;
+                    Console.WriteLine($"Аудио сообщение номер: {nameVoice} длительность: {e.Message.Voice.Duration} сек");
+                    DownLoadFile(idVoice, nameVoice);
                     break;
                 case Telegram.Bot.Types.Enums.MessageType.Document:
                     DownLoadFile(e.Message.Document.FileId, e.Message.Document.FileName);
@@ -172,7 +185,60 @@ namespace Mod_9
                     break;
             }
         }
+        private void WorkingWithDocuments()
+        {
+            //string[] documents = Directory.GetFiles(@"D:\File\", );
+            string path = @"D:\File\";
+            int trimLength = path.Length;
+            DirectoryInfo dir = new DirectoryInfo(path);
+            IEnumerable<FileInfo> fileList = dir.GetFiles("*.*", SearchOption.AllDirectories);
+            var queryGroupByExt =
+                from file in fileList
+                group file by file.Extension.ToLower() into fileGroup
+                orderby fileGroup.Key
+                select fileGroup;
 
+            PageOutput(trimLength, queryGroupByExt);
+
+        }
+
+        private static void PageOutput(int trimLength, IEnumerable<IGrouping<string, FileInfo>> queryGroupByExt)
+        {
+            bool goAgain = true;
+
+            int numLines = Console.WindowHeight - 3;
+
+            foreach (var fileGroup in queryGroupByExt)
+            {
+                int line = 0;
+                do
+                {
+                    Console.Clear();
+                    Console.WriteLine(fileGroup.Key == String.Empty ? "[none]" : fileGroup.Key);
+
+                    var resultPage = fileGroup.Skip(line).Take(numLines);
+
+                    foreach (var e in resultPage)
+                    {
+                        Console.WriteLine("\t{0}", e.FullName.Substring(trimLength));
+                    }
+                    line += numLines;
+                    Console.WriteLine("press any key to continue or the 'End' key to break...");
+                    ConsoleKey key = Console.ReadKey().Key;
+                    
+                    if (key == ConsoleKey.End)
+                    {
+                        goAgain = false;
+                        break;
+                    }
+
+                } while (line < fileGroup.Count());
+                if (goAgain == false) 
+                    break;
+            }
+        }
+
+        
         /// <summary>
         /// кнопка старт
         /// </summary>
