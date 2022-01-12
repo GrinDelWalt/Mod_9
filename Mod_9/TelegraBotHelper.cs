@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Telegram.Bot;
+using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 
 namespace Mod_9
@@ -66,7 +67,7 @@ namespace Mod_9
                 case Telegram.Bot.Types.Enums.UpdateType.Message:
                     if (msg.Text != null)
                     {
-                        WorkingWithArchive(msg.Text, msg.Chat.Id);
+                        WorkingWithArchive(msg.Text, msg.Chat.Id, e);
                     }
                     break;
                 case Telegram.Bot.Types.Enums.UpdateType.CallbackQuery:
@@ -95,38 +96,13 @@ namespace Mod_9
                 Console.WriteLine($"{text} TypeMessage: {e.Message.Type.ToString()}");
             }
         }
-        /// <summary>
-        /// поиск, отправка фото
-        /// </summary>
-        /// <param name="a">chat ID</param>
-        private async void WorkingWithFile(long a, string type)
-        {
-            string[] fotoList = Directory.GetFiles(@"D:\File\", type);
-            Dictionary<int, string> path = new Dictionary<int, string>();
-            int inckrement = 0;
-            if (fotoList.Length == 0)
-            {
-                await _client.SendTextMessageAsync(a, "Упс, похоже архив пуст");
-            }
-            else
-            {
-                foreach (var item in fotoList)
-                {
-                    inckrement++;
-                    path.Add(inckrement, item);
-                    using (FileStream stream = File.OpenRead(item))
-                    {
-                        var r = _client.SendTextMessageAsync(a, item, replyMarkup: GetInLineButton(item)).Result;
-                    }
-                }
-            }
-        }
+       
         /// <summary>
         /// Работа с архивом файлов
         /// </summary>
         /// <param name="text"></param>
         /// <param name="id"></param>
-        private async void WorkingWithArchive(string text, long id)
+        private async void WorkingWithArchive(string text, long id, Telegram.Bot.Types.Update e)
         {
             switch (text)
             {
@@ -140,7 +116,7 @@ namespace Mod_9
                     WorkingWithFile(id, "*.audio");
                     break;
                 case "Документы":
-                    WorkingWithDocuments();
+                    WorkingWithDocuments(id, e);
                     break;
                 case "Видео":
                     WorkingWithFile(id, "*.video");
@@ -185,7 +161,36 @@ namespace Mod_9
                     break;
             }
         }
-        private void WorkingWithDocuments()
+        /// <summary>
+        /// поиск, отправка фото
+        /// </summary>
+        /// <param name="a">chat ID</param>
+        private async void WorkingWithFile(long a, string type)
+        {
+            string[] fotoList = Directory.GetFiles(@"D:\File\", type);
+            Dictionary<int, string> path = new Dictionary<int, string>();
+            int inckrement = 0;
+            if (fotoList.Length == 0)
+            {
+                await _client.SendTextMessageAsync(a, "Упс, похоже архив пуст");
+            }
+            else
+            {
+                foreach (var item in fotoList)
+                {
+                    inckrement++;
+                    path.Add(inckrement, item);
+                    using (FileStream stream = File.OpenRead(item))
+                    {
+                        var r = _client.SendTextMessageAsync(a, item, replyMarkup: GetInLineButton(item)).Result;
+                    }
+                }
+            }
+        }
+        /// <summary>
+        /// сортировка по расширениям
+        /// </summary>
+        private void WorkingWithDocuments(long id, Telegram.Bot.Types.Update e)
         {
             //string[] documents = Directory.GetFiles(@"D:\File\", );
             string path = @"D:\File\";
@@ -198,12 +203,18 @@ namespace Mod_9
                 orderby fileGroup.Key
                 select fileGroup;
 
-            PageOutput(trimLength, queryGroupByExt);
+            PageOutput(trimLength, queryGroupByExt, id, e);
 
         }
-
-        private static void PageOutput(int trimLength, IEnumerable<IGrouping<string, FileInfo>> queryGroupByExt)
+        
+        private void PageOutput(int trimLength, IEnumerable<IGrouping<string, FileInfo>> queryGroupByExt, long id, Telegram.Bot.Types.Update e)
         {
+            foreach (var item in queryGroupByExt)
+            {
+                var r = _client.SendTextMessageAsync(id, $"расширение: {item.Key}",replyMarkup: GetInLineButtonFile(item.Key)).Result;
+            }
+
+            queryGroupByExt.
             bool goAgain = true;
 
             int numLines = Console.WindowHeight - 3;
@@ -217,6 +228,7 @@ namespace Mod_9
                     Console.WriteLine(fileGroup.Key == String.Empty ? "[none]" : fileGroup.Key);
 
                     var resultPage = fileGroup.Skip(line).Take(numLines);
+                    Console.WriteLine(fileGroup.Count());
 
                     foreach (var e in resultPage)
                     {
@@ -238,7 +250,11 @@ namespace Mod_9
             }
         }
 
-        
+        private static IReplyMarkup GetInLineButtonFile(string type)
+        {
+            return new InlineKeyboardMarkup(new InlineKeyboardButton { Text = "выбрать расширение", CallbackData = type });
+        }
+
         /// <summary>
         /// кнопка старт
         /// </summary>
@@ -260,7 +276,7 @@ namespace Mod_9
         /// <returns></returns>
         private static IReplyMarkup GetInLineButton(string path)
         {
-            return new InlineKeyboardMarkup(new InlineKeyboardButton { Text = "Скачать", CallbackData = path.ToString()});
+            return new InlineKeyboardMarkup(new InlineKeyboardButton { Text = "Скачать", CallbackData = path});
         }
         /// <summary>
         /// кнопки для выбора типа поиска файлов
