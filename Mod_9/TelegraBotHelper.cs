@@ -14,7 +14,10 @@ namespace Mod_9
 {
     internal class TelegraBotHelper
     {
-        
+        Telegram.Bot.Types.Update e;
+        IEnumerable<IGrouping<string, FileInfo>> queryGroupByExt;
+        string fileType;
+        string filePath;
 
         Telegram.Bot.TelegramBotClient _client;
         private readonly string _token;
@@ -46,7 +49,8 @@ namespace Mod_9
                         {
                             foreach (var e in updates)
                             {
-                                MessageReader(e);
+                                this.e = e;
+                                MessageReader();
                                 offset = e.Id + 1;
                             }
                         }
@@ -57,7 +61,7 @@ namespace Mod_9
                 }
             }
         }
-        private async void MessageReader(Telegram.Bot.Types.Update e)
+        private void MessageReader()
         {
             var msg = e.Message;
 
@@ -67,14 +71,12 @@ namespace Mod_9
                 case Telegram.Bot.Types.Enums.UpdateType.Message:
                     if (msg.Text != null)
                     {
-                        WorkingWithArchive(msg.Text, msg.Chat.Id, e);
+                        WorkingWithArchive(msg.Text);
                     }
                     break;
                 case Telegram.Bot.Types.Enums.UpdateType.CallbackQuery:
-                    using (FileStream downlode = File.OpenRead(e.CallbackQuery.Data))
-                    {
-                        await _client.SendPhotoAsync(e.CallbackQuery.Message.Chat.Id, new Telegram.Bot.Types.InputFiles.InputOnlineFile(downlode));
-                    }
+                    string path = e.CallbackQuery.Data;
+                    Callback(path);
                     break;
                 default:
                     Console.WriteLine("необработанный тип данных");
@@ -84,11 +86,13 @@ namespace Mod_9
             
             if (e.Message != null)
             {
-                TypeFile(e);
+                TypeFile();
             }
-            ConsoleStatus(e);
+            ConsoleStatus();
         }
-        private void ConsoleStatus(Telegram.Bot.Types.Update e)
+
+
+        private void ConsoleStatus()
         {
             if (e.Message != null)
             {
@@ -102,8 +106,9 @@ namespace Mod_9
         /// </summary>
         /// <param name="text"></param>
         /// <param name="id"></param>
-        private async void WorkingWithArchive(string text, long id, Telegram.Bot.Types.Update e)
+        private async void WorkingWithArchive(string text)
         {
+            long id = e.Message.Chat.Id;
             switch (text)
             {
                 case "/start":
@@ -116,27 +121,38 @@ namespace Mod_9
                     WorkingWithFile(id, "*.audio");
                     break;
                 case "Документы":
-                    WorkingWithDocuments(id, e);
+                    WorkingWithDocuments(id);
                     break;
                 case "Видео":
                     WorkingWithFile(id, "*.video");
                     break;
                 default:
-                    await _client.SendTextMessageAsync(id, "Привет, я не понимаю тебя, возможно я еще не умею делать то чего ты хочешь, обратись к моему создателю и возможно он научит меня тому что тебе нужно:) для Запуска нажми: start",
+                    if (this.filePath == null)
+                    {
+                        await _client.SendTextMessageAsync(id, "Привет, я не понимаю тебя, возможно я еще не умею делать то чего ты хочешь, обратись к моему создателю и возможно он научит меня тому что тебе нужно:) для Запуска нажми: start",
                         replyMarkup: GetButtonseStart());
+                    }
+                    else
+                    {
+                        UploadingFile();
+                    }
                     break;
             }
         }
-        private async void TypeFile(Telegram.Bot.Types.Update e)
+        /// <summary>
+        /// сохронение файлов из ТБ
+        /// </summary>
+        private async void TypeFile()
         {
             switch (e.Message.Type)
             {
                 case Telegram.Bot.Types.Enums.MessageType.Photo:
-                    string fileNamePhote = e.Message.Photo[e.Message.Photo.Length - 1].FileUniqueId + ".jpeg";
                     string fileIdPhoto = e.Message.Photo[e.Message.Photo.Length - 1].FileId;
-                    Console.WriteLine($"Название фото: {fileIdPhoto}");
-                    DownLoadFile(fileIdPhoto, fileNamePhote);
-                    await _client.SendTextMessageAsync(e.Message.Chat.Id, "Фото загружено");
+                    await _client.SendTextMessageAsync(e.Message.Chat.Id, "Введите название фотографии или нажмите кнопку дата и фото будет присвоено названия текущего времени и даты по МСК", replyMarkup: GetButtonseDate());
+                    this.fileType = ".jpeg";
+                    this.filePath = fileIdPhoto;
+                    //UploadingFile(fileNamePhoto, fileIdPhoto);
+                    //await _client.SendTextMessageAsync(e.Message.Chat.Id, "Фото загружено");
                     break;
                 case Telegram.Bot.Types.Enums.MessageType.Video:
                     string formatVideo = e.Message.Video.MimeType;
@@ -144,7 +160,7 @@ namespace Mod_9
                     string nameVideo = e.Message.Video.FileName + $".{formatVideo}";
                     string idVideo = e.Message.Video.FileId;
                     Console.WriteLine($"Название видео: {nameVideo}");
-                    DownLoadFile(idVideo,nameVideo);
+                    //UploadingFile(idVideo,nameVideo);
                     break;
                 case Telegram.Bot.Types.Enums.MessageType.Voice:
                     string formatVoice = e.Message.Voice.MimeType;
@@ -152,17 +168,20 @@ namespace Mod_9
                     string nameVoice = Convert.ToString(e.Message.MessageId) + $".{formatVoice}";
                     string idVoice = e.Message.Voice.FileId;
                     Console.WriteLine($"Аудио сообщение номер: {nameVoice} длительность: {e.Message.Voice.Duration} сек");
-                    DownLoadFile(idVoice, nameVoice);
+                    //UploadingFile(idVoice, nameVoice);
                     break;
                 case Telegram.Bot.Types.Enums.MessageType.Document:
-                    DownLoadFile(e.Message.Document.FileId, e.Message.Document.FileName);
+                    //UploadingFile(e.Message.Document.FileId, e.Message.Document.FileName);
                     Console.WriteLine(e.Message.Document.FileName);
                     Console.WriteLine(e.Message.Document.FileSize);
                     break;
             }
         }
+
+        
+
         /// <summary>
-        /// поиск, отправка фото
+        /// поиск, отправка файлов
         /// </summary>
         /// <param name="a">chat ID</param>
         private async void WorkingWithFile(long a, string type)
@@ -180,17 +199,41 @@ namespace Mod_9
                 {
                     inckrement++;
                     path.Add(inckrement, item);
-                    using (FileStream stream = File.OpenRead(item))
-                    {
-                        var r = _client.SendTextMessageAsync(a, item, replyMarkup: GetInLineButton(item)).Result;
-                    }
+
+                    FileInfo file = new FileInfo(item);
+                    string data = file.Extension.ToLower();
+                    data = string.Join(",", item, data);
+                    var r = _client.SendTextMessageAsync(a, item, replyMarkup: GetInLineButton(data)).Result;
                 }
             }
+        }
+        
+
+        private void Callback(string path)
+        {
+            string[] data = path.Split(',');
+            switch (data[1])
+            {
+                case ".jpeg":
+                    DownloadPhoto(data[0]);
+                    break;
+                case ".video":
+                    DownloadVideo(data[0]);
+                    break;
+                case ".audio":
+                    DownloadAudio(data[0]);
+                    break;
+
+                default:
+                    DownLoadFile(data[0]);
+                    break;
+            }
+            
         }
         /// <summary>
         /// сортировка по расширениям
         /// </summary>
-        private void WorkingWithDocuments(long id, Telegram.Bot.Types.Update e)
+        private void WorkingWithDocuments(long id)
         {
             //string[] documents = Directory.GetFiles(@"D:\File\", );
             string path = @"D:\File\";
@@ -203,50 +246,90 @@ namespace Mod_9
                 orderby fileGroup.Key
                 select fileGroup;
 
-            PageOutput(trimLength, queryGroupByExt, id, e);
-
+            this.queryGroupByExt = queryGroupByExt;
+            KeyProcessing(trimLength, id);
         }
-        
-        private void PageOutput(int trimLength, IEnumerable<IGrouping<string, FileInfo>> queryGroupByExt, long id, Telegram.Bot.Types.Update e)
+
+        private void KeyProcessing(int trimLength, long id)
         {
-            foreach (var item in queryGroupByExt)
+
+            foreach (var fileGroup in this.queryGroupByExt)
             {
-                var r = _client.SendTextMessageAsync(id, $"расширение: {item.Key}",replyMarkup: GetInLineButtonFile(item.Key)).Result;
+                var r = _client.SendTextMessageAsync(id, $"расширение: {fileGroup.Key}", replyMarkup: GetInLineButtonFile(fileGroup.Key)).Result;
             }
 
-            queryGroupByExt.
-            bool goAgain = true;
-
-            int numLines = Console.WindowHeight - 3;
-
-            foreach (var fileGroup in queryGroupByExt)
+            foreach (var fileGroup in this.queryGroupByExt)
             {
-                int line = 0;
-                do
+                for (int i = 0; i < this.queryGroupByExt.Count(); i++)
                 {
-                    Console.Clear();
-                    Console.WriteLine(fileGroup.Key == String.Empty ? "[none]" : fileGroup.Key);
-
-                    var resultPage = fileGroup.Skip(line).Take(numLines);
-                    Console.WriteLine(fileGroup.Count());
-
-                    foreach (var e in resultPage)
+                    if (e.CallbackQuery != null && fileGroup.Key == e.CallbackQuery.Data)
                     {
-                        Console.WriteLine("\t{0}", e.FullName.Substring(trimLength));
+                        foreach (var item in fileGroup)
+                        {
+                            var dok = _client.SendTextMessageAsync(id, item.FullName.Substring(trimLength), replyMarkup: GetInLineButton(Convert.ToString(item))).Result;
+                        }
                     }
-                    line += numLines;
-                    Console.WriteLine("press any key to continue or the 'End' key to break...");
-                    ConsoleKey key = Console.ReadKey().Key;
-                    
-                    if (key == ConsoleKey.End)
-                    {
-                        goAgain = false;
-                        break;
-                    }
+                }
+            }
 
-                } while (line < fileGroup.Count());
-                if (goAgain == false) 
-                    break;
+
+            
+            //int line = 0;
+            //do
+            //{
+            //    Console.Clear();
+            //    Console.WriteLine(fileGroup.Key == String.Empty ? "[none]" : fileGroup.Key);
+
+            //    var resultPage = fileGroup;
+            //    Console.WriteLine(fileGroup.Count());
+
+            //    foreach (var item in fileGroup)
+            //    {
+            //        Console.WriteLine("\t{0}", item.FullName.Substring(trimLength));
+            //    }
+            //    line += numLines;
+            //    Console.WriteLine("press any key to continue or the 'End' key to break...");
+            //    ConsoleKey key = Console.ReadKey().Key;
+
+            //    if (key == ConsoleKey.End)
+            //    {
+            //        goAgain = false;
+            //        break;
+            //    }
+
+            //} while (line < fileGroup.Count());
+            //if (goAgain == false) 
+            //    break;
+        }
+        private async void DownLoadFile(string v)
+        {
+            using (FileStream downlode = File.OpenRead(v))
+            {
+                await _client.SendDocumentAsync(e.CallbackQuery.Message.Chat.Id, new Telegram.Bot.Types.InputFiles.InputOnlineFile(downlode));
+            }
+        }
+
+        private async void DownloadAudio(string v)
+        {
+            using (FileStream downlode = File.OpenRead(v))
+            {
+                await _client.SendAudioAsync(e.CallbackQuery.Message.Chat.Id, new Telegram.Bot.Types.InputFiles.InputOnlineFile(downlode));
+            }
+        }
+
+        private async void DownloadVideo(string v)
+        {
+            using (FileStream downlode = File.OpenRead(v))
+            {
+                await _client.SendVideoAsync(e.CallbackQuery.Message.Chat.Id, new Telegram.Bot.Types.InputFiles.InputOnlineFile(downlode));
+            }
+        }
+
+        private async void DownloadPhoto(string v)
+        {
+            using (FileStream downlode = File.OpenRead(v))
+            {
+                await _client.SendPhotoAsync(e.CallbackQuery.Message.Chat.Id, new Telegram.Bot.Types.InputFiles.InputOnlineFile(downlode));
             }
         }
 
@@ -266,6 +349,16 @@ namespace Mod_9
                 Keyboard = new List<List<KeyboardButton>>
                 {
                     new List<KeyboardButton>{new KeyboardButton { Text = "/start" } }
+                }
+            };
+        }
+        private static IReplyMarkup GetButtonseDate()
+        {
+            return new ReplyKeyboardMarkup
+            {
+                Keyboard = new List<List<KeyboardButton>>
+                {
+                    new List<KeyboardButton>{new KeyboardButton { Text = DateTime.Now.ToString("dd'.'MM'.'yyyy' 'HH'.'mm'.'ss") } }
                 }
             };
         }
@@ -293,19 +386,24 @@ namespace Mod_9
                 }
             };
         }
+
         /// <summary>
         /// метод загрузки данных из ТГ бота на ПК
         /// </summary>
         /// <param name="fileId"></param>
         /// <param name="name"></param>
-        async void DownLoadFile(string fileId, string name)
+        async void UploadingFile()
         {
-            var file = await _client.GetFileAsync(fileId);
-            FileStream fs = new FileStream(@"D:\File\" + name, FileMode.Create);
+
+            var file = await _client.GetFileAsync(filePath);
+            FileStream fs = new FileStream(@"D:\File\" + e.Message.Text + fileType, FileMode.Create);
             await _client.DownloadFileAsync(file.FilePath, fs);
             fs.Close();
 
             fs.Dispose();
+
+            this.fileType = null;
+            this.filePath = null;
         }
     }
 }
