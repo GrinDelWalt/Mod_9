@@ -16,8 +16,9 @@ namespace Mod_9
     {
         Telegram.Bot.Types.Update e;
         IEnumerable<IGrouping<string, FileInfo>> queryGroupByExt;
-        string fileType;
+        string fileExtension;
         string filePath;
+        string fileMessage;
 
         Telegram.Bot.TelegramBotClient _client;
         private readonly string _token;
@@ -149,31 +150,33 @@ namespace Mod_9
                 case Telegram.Bot.Types.Enums.MessageType.Photo:
                     string fileIdPhoto = e.Message.Photo[e.Message.Photo.Length - 1].FileId;
                     await _client.SendTextMessageAsync(e.Message.Chat.Id, "Введите название фотографии или нажмите кнопку дата и фото будет присвоено названия текущего времени и даты по МСК", replyMarkup: GetButtonseDate());
-                    this.fileType = ".jpeg";
+                    this.fileExtension = ".jpeg";
                     this.filePath = fileIdPhoto;
-                    //UploadingFile(fileNamePhoto, fileIdPhoto);
-                    //await _client.SendTextMessageAsync(e.Message.Chat.Id, "Фото загружено");
+                    this.fileMessage = "Фото загружено";
                     break;
                 case Telegram.Bot.Types.Enums.MessageType.Video:
                     string formatVideo = e.Message.Video.MimeType;
                     formatVideo = new string(formatVideo.TakeWhile(x => x != '/').ToArray());
-                    string nameVideo = e.Message.Video.FileName + $".{formatVideo}";
-                    string idVideo = e.Message.Video.FileId;
-                    Console.WriteLine($"Название видео: {nameVideo}");
-                    //UploadingFile(idVideo,nameVideo);
+                    this.fileExtension = $".{formatVideo}";
+                    this.filePath = e.Message.Video.FileId;
+                    this.fileMessage = "Видео загружено";
+                    await _client.SendTextMessageAsync(e.Message.Chat.Id, "Введите название фотографии или нажмите кнопку дата и фото будет присвоено названия текущего времени и даты по МСК", replyMarkup: GetButtonseDate());
                     break;
                 case Telegram.Bot.Types.Enums.MessageType.Voice:
                     string formatVoice = e.Message.Voice.MimeType;
                     formatVoice = new string(formatVoice.TakeWhile(x => x != '/').ToArray());
-                    string nameVoice = Convert.ToString(e.Message.MessageId) + $".{formatVoice}";
-                    string idVoice = e.Message.Voice.FileId;
-                    Console.WriteLine($"Аудио сообщение номер: {nameVoice} длительность: {e.Message.Voice.Duration} сек");
-                    //UploadingFile(idVoice, nameVoice);
+                    this.fileExtension = $".{formatVoice}";
+                    this.filePath = e.Message.Voice.FileId;
+                    this.fileMessage = "Аудио запись загружена";
+                    await _client.SendTextMessageAsync(e.Message.Chat.Id, "Введите название фотографии или нажмите кнопку дата и фото будет присвоено названия текущего времени и даты по МСК", replyMarkup: GetButtonseDate());
                     break;
                 case Telegram.Bot.Types.Enums.MessageType.Document:
-                    //UploadingFile(e.Message.Document.FileId, e.Message.Document.FileName);
-                    Console.WriteLine(e.Message.Document.FileName);
-                    Console.WriteLine(e.Message.Document.FileSize);
+                    string formatDoc = e.Message.Document.MimeType;
+                    formatDoc = new string(formatDoc.TakeWhile(x => x != '/').ToArray());
+                    this.fileExtension = $".{formatDoc}";
+                    this.filePath = e.Message.Document.FileId;
+                    this.fileMessage = "Документ загружен";
+                    await _client.SendTextMessageAsync(e.Message.Chat.Id, "Введите название фотографии или нажмите кнопку дата и фото будет присвоено названия текущего времени и даты по МСК", replyMarkup: GetButtonseDate());
                     break;
             }
         }
@@ -271,35 +274,6 @@ namespace Mod_9
                     }
                 }
             }
-
-
-            
-            //int line = 0;
-            //do
-            //{
-            //    Console.Clear();
-            //    Console.WriteLine(fileGroup.Key == String.Empty ? "[none]" : fileGroup.Key);
-
-            //    var resultPage = fileGroup;
-            //    Console.WriteLine(fileGroup.Count());
-
-            //    foreach (var item in fileGroup)
-            //    {
-            //        Console.WriteLine("\t{0}", item.FullName.Substring(trimLength));
-            //    }
-            //    line += numLines;
-            //    Console.WriteLine("press any key to continue or the 'End' key to break...");
-            //    ConsoleKey key = Console.ReadKey().Key;
-
-            //    if (key == ConsoleKey.End)
-            //    {
-            //        goAgain = false;
-            //        break;
-            //    }
-
-            //} while (line < fileGroup.Count());
-            //if (goAgain == false) 
-            //    break;
         }
         private async void DownLoadFile(string v)
         {
@@ -394,16 +368,24 @@ namespace Mod_9
         /// <param name="name"></param>
         async void UploadingFile()
         {
-
+            long id = e.Message.Chat.Id;
+            await _client.SendTextMessageAsync(id, "Загрузка");
+            string fileExtension = this.fileExtension;
+            string filePath = this.filePath;
+            string fileMessage = this.fileMessage;
+            this.fileExtension = null;
+            this.filePath = null;
+            this.fileMessage = null;
             var file = await _client.GetFileAsync(filePath);
-            FileStream fs = new FileStream(@"D:\File\" + e.Message.Text + fileType, FileMode.Create);
+            FileStream fs = new FileStream(@"D:\File\" + e.Message.Text + fileExtension, FileMode.Create);
             await _client.DownloadFileAsync(file.FilePath, fs);
             fs.Close();
 
             fs.Dispose();
 
-            this.fileType = null;
-            this.filePath = null;
+            await _client.SendTextMessageAsync(id, $"{fileMessage}");
+
+            
         }
     }
 }
