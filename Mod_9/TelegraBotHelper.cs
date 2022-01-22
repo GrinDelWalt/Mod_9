@@ -63,6 +63,9 @@ namespace Mod_9
                 }
             }
         }
+        /// <summary>
+        /// определения типа входных данных
+        /// </summary>
         private async void MessageReader()
         {
             var msg = e.Message;
@@ -101,7 +104,9 @@ namespace Mod_9
             ConsoleStatus();
         }
 
-
+        /// <summary>
+        /// вывод данных в консоль
+        /// </summary>
         private void ConsoleStatus()
         {
             if (e.Message != null)
@@ -165,33 +170,39 @@ namespace Mod_9
                     break;
                 case Telegram.Bot.Types.Enums.MessageType.Video:
                     string formatVideo = e.Message.Video.MimeType;
-                    formatVideo = new string(formatVideo.TakeWhile(x => x != '/').ToArray());
+                    formatVideo = Expansion(formatVideo);
                     this.fileExtension = $".{formatVideo}";
                     this.filePath = e.Message.Video.FileId;
                     this.fileMessage = "Видео загружено";
-                    await _client.SendTextMessageAsync(e.Message.Chat.Id, "Введите название фотографии или нажмите кнопку дата и фото будет присвоено названия текущего времени и даты по МСК", replyMarkup: GetButtonseDate());
+                    await _client.SendTextMessageAsync(e.Message.Chat.Id, "Введите название видео или нажмите кнопку дата и фото будет присвоено названия текущего времени и даты по МСК", replyMarkup: GetButtonseDate());
                     break;
                 case Telegram.Bot.Types.Enums.MessageType.Voice:
                     string formatVoice = e.Message.Voice.MimeType;
-                    formatVoice = new string(formatVoice.TakeWhile(x => x != '/').ToArray());
+                    formatVoice = Expansion(formatVoice);
                     this.fileExtension = $".{formatVoice}";
                     this.filePath = e.Message.Voice.FileId;
                     this.fileMessage = "Аудио запись загружена";
-                    await _client.SendTextMessageAsync(e.Message.Chat.Id, "Введите название фотографии или нажмите кнопку дата и фото будет присвоено названия текущего времени и даты по МСК", replyMarkup: GetButtonseDate());
+                    await _client.SendTextMessageAsync(e.Message.Chat.Id, "Введите название аудио записи или нажмите кнопку дата и фото будет присвоено названия текущего времени и даты по МСК", replyMarkup: GetButtonseDate());
                     break;
                 case Telegram.Bot.Types.Enums.MessageType.Document:
                     string formatDoc = e.Message.Document.MimeType;
-                    formatDoc = new string(formatDoc.TakeWhile(x => x != '/').ToArray());
+                    formatDoc = Expansion(formatDoc);
                     this.fileExtension = $".{formatDoc}";
                     this.filePath = e.Message.Document.FileId;
                     this.fileMessage = "Документ загружен";
-                    await _client.SendTextMessageAsync(e.Message.Chat.Id, "Введите название фотографии или нажмите кнопку дата и фото будет присвоено названия текущего времени и даты по МСК", replyMarkup: GetButtonseDate());
+                    await _client.SendTextMessageAsync(e.Message.Chat.Id, "Введите название Файла или нажмите кнопку дата и фото будет присвоено названия текущего времени и даты по МСК", replyMarkup: GetButtonseDate());
                     break;
             }
         }
-
-        
-
+        /// <summary>
+        /// возврат формата файла
+        /// </summary>
+        /// <param name="expansion"></param>
+        /// <returns></returns>
+        private string Expansion(string expansion)
+        {
+            return expansion = expansion.Substring(expansion.IndexOf('/') + 1);
+        }
         /// <summary>
         /// поиск, отправка файлов
         /// </summary>
@@ -220,8 +231,10 @@ namespace Mod_9
                 }
             }
         }
-        
-
+        /// <summary>
+        /// опеределения формата файла дял загрузки
+        /// </summary>
+        /// <param name="path"></param>
         private void Callback(string path)
         {
             string[] data = path.Split(',');
@@ -262,7 +275,10 @@ namespace Mod_9
             this.queryGroupByExt = queryGroupByExt;
             KeyProcessing(trimLength);
         }
-
+        /// <summary>
+        /// вывод скиска формата файлов
+        /// </summary>
+        /// <param name="trimLength"></param>
         private void KeyProcessing(int trimLength)
         {
             long id = e.Message.Chat.Id;
@@ -272,6 +288,9 @@ namespace Mod_9
             }
             this.callback = true;
         }
+        /// <summary>
+        /// вывод файлов по ключу
+        /// </summary>
         private void DocProcessing()
         {
             
@@ -294,7 +313,10 @@ namespace Mod_9
             }
             this.callback = false;
         }
-
+        /// <summary>
+        /// выгрузка документа
+        /// </summary>
+        /// <param name="v"></param>
         private async void DownLoadFile(string v)
         {
             await _client.SendTextMessageAsync(e.CallbackQuery.Message.Chat.Id, "Загрузка...");
@@ -303,7 +325,10 @@ namespace Mod_9
                 await _client.SendDocumentAsync(e.CallbackQuery.Message.Chat.Id, new Telegram.Bot.Types.InputFiles.InputOnlineFile(downlode));
             }
         }
-
+        /// <summary>
+        /// выгрузка аудио записи
+        /// </summary>
+        /// <param name="v"></param>
         private async void DownloadAudio(string v)
         {
             await _client.SendTextMessageAsync(e.CallbackQuery.Message.Chat.Id, "Загрузка...");
@@ -312,7 +337,10 @@ namespace Mod_9
                 await _client.SendAudioAsync(e.CallbackQuery.Message.Chat.Id, new Telegram.Bot.Types.InputFiles.InputOnlineFile(downlode));
             }
         }
-
+        /// <summary>
+        /// выгрузка видео
+        /// </summary>
+        /// <param name="v"></param>
         private async void DownloadVideo(string v)
         {
             await _client.SendTextMessageAsync(e.CallbackQuery.Message.Chat.Id, "Загрузка...");
@@ -321,7 +349,10 @@ namespace Mod_9
                 await _client.SendVideoAsync(e.CallbackQuery.Message.Chat.Id, new Telegram.Bot.Types.InputFiles.InputOnlineFile(downlode));
             }
         }
-
+        /// <summary>
+        /// выгрузка фото
+        /// </summary>
+        /// <param name="v"></param>
         private async void DownloadPhoto(string v)
         {
             await _client.SendTextMessageAsync(e.CallbackQuery.Message.Chat.Id, "Загрузка...");
@@ -330,7 +361,11 @@ namespace Mod_9
                 await _client.SendPhotoAsync(e.CallbackQuery.Message.Chat.Id, new Telegram.Bot.Types.InputFiles.InputOnlineFile(downlode));
             }
         }
-
+        /// <summary>
+        /// кнопка в чате по выбору расширения
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
         private static IReplyMarkup GetInLineButtonFile(string type)
         {
             return new InlineKeyboardMarkup(new InlineKeyboardButton { Text = "выбрать расширение", CallbackData = type });
@@ -350,6 +385,10 @@ namespace Mod_9
                 }
             };
         }
+        /// <summary>
+        /// вывод кнопки с текущим временем и даты
+        /// </summary>
+        /// <returns></returns>
         private static IReplyMarkup GetButtonseDate()
         {
             return new ReplyKeyboardMarkup
@@ -384,7 +423,6 @@ namespace Mod_9
                 }
             };
         }
-
         /// <summary>
         /// метод загрузки данных из ТГ бота на ПК
         /// </summary>
@@ -408,8 +446,6 @@ namespace Mod_9
             fs.Dispose();
 
             await _client.SendTextMessageAsync(id, $"{fileMessage}");
-
-            
         }
     }
 }
