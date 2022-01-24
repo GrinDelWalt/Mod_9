@@ -92,6 +92,8 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Button.cs" />
+    <Compile Include="Download.cs" />
     <Compile Include="State.cs" />
     <Compile Include="UserState.cs" />
     <Compile Include="TelegraBotHelper.cs" />

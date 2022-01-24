@@ -21,15 +21,17 @@ namespace Mod_9
         string fileMessage;
         bool callback;
         long id;
+        pButton button;
         Telegram.Bot.TelegramBotClient _client;
         private readonly string _token;
-        private Dictionary<long, UserState> _clientStates = new Dictionary<long, UserState>();
+        //private Dictionary<long, UserState> _clientStates = new Dictionary<long, UserState>();
         /// <summary>
         /// токен
         /// </summary>
         /// <param name="token"></param>
         public TelegraBotHelper(string token)
         {
+            button = new Button();
             this._token = token;
         }
         /// <summary>
@@ -70,7 +72,6 @@ namespace Mod_9
         {
             var msg = e.Message;
 
-
             switch (e.Type)
             {
                 case Telegram.Bot.Types.Enums.UpdateType.Message:
@@ -95,8 +96,6 @@ namespace Mod_9
                     Console.WriteLine("необработанный тип данных");
                     break;
             }
-            
-            
             if (e.Message != null)
             {
                 TypeFile();
@@ -123,11 +122,12 @@ namespace Mod_9
         /// <param name="id"></param>
         private async void WorkingWithArchive(string text)
         {
+
             long id = e.Message.Chat.Id;
             switch (text)
             {
                 case "/start":
-                    await _client.SendTextMessageAsync(id, "Привет", replyMarkup: GetButtonse());
+                    await _client.SendTextMessageAsync(id, "Привет", replyMarkup: button.GetButtonse());
                     break;
                 case "Архив Фото":
                     WorkingWithFile("*.jpeg");
@@ -145,7 +145,7 @@ namespace Mod_9
                     if (this.filePath == null)
                     {
                         await _client.SendTextMessageAsync(id, "Привет, я не понимаю тебя, возможно я еще не умею делать то чего ты хочешь, обратись к моему создателю и возможно он научит меня тому что тебе нужно:) для Запуска нажми: start",
-                        replyMarkup: GetButtonseStart());
+                        replyMarkup: button.GetButtonseStart());
                     }
                     else
                     {
@@ -163,7 +163,7 @@ namespace Mod_9
             {
                 case Telegram.Bot.Types.Enums.MessageType.Photo:
                     string fileIdPhoto = e.Message.Photo[e.Message.Photo.Length - 1].FileId;
-                    await _client.SendTextMessageAsync(e.Message.Chat.Id, "Введите название фотографии или нажмите кнопку дата и фото будет присвоено названия текущего времени и даты по МСК", replyMarkup: GetButtonseDate());
+                    await _client.SendTextMessageAsync(e.Message.Chat.Id, "Введите название фотографии или нажмите кнопку дата и фото будет присвоено названия текущего времени и даты по МСК", replyMarkup: button.GetButtonseDate());
                     this.fileExtension = ".jpeg";
                     this.filePath = fileIdPhoto;
                     this.fileMessage = "Фото загружено";
@@ -174,7 +174,7 @@ namespace Mod_9
                     this.fileExtension = $".{formatVideo}";
                     this.filePath = e.Message.Video.FileId;
                     this.fileMessage = "Видео загружено";
-                    await _client.SendTextMessageAsync(e.Message.Chat.Id, "Введите название видео или нажмите кнопку дата и фото будет присвоено названия текущего времени и даты по МСК", replyMarkup: GetButtonseDate());
+                    await _client.SendTextMessageAsync(e.Message.Chat.Id, "Введите название видео или нажмите кнопку дата и фото будет присвоено названия текущего времени и даты по МСК", replyMarkup: button.GetButtonseDate());
                     break;
                 case Telegram.Bot.Types.Enums.MessageType.Voice:
                     string formatVoice = e.Message.Voice.MimeType;
@@ -182,7 +182,7 @@ namespace Mod_9
                     this.fileExtension = $".{formatVoice}";
                     this.filePath = e.Message.Voice.FileId;
                     this.fileMessage = "Аудио запись загружена";
-                    await _client.SendTextMessageAsync(e.Message.Chat.Id, "Введите название аудио записи или нажмите кнопку дата и фото будет присвоено названия текущего времени и даты по МСК", replyMarkup: GetButtonseDate());
+                    await _client.SendTextMessageAsync(e.Message.Chat.Id, "Введите название аудио записи или нажмите кнопку дата и фото будет присвоено названия текущего времени и даты по МСК", replyMarkup: button.GetButtonseDate());
                     break;
                 case Telegram.Bot.Types.Enums.MessageType.Document:
                     string formatDoc = e.Message.Document.MimeType;
@@ -190,7 +190,7 @@ namespace Mod_9
                     this.fileExtension = $".{formatDoc}";
                     this.filePath = e.Message.Document.FileId;
                     this.fileMessage = "Документ загружен";
-                    await _client.SendTextMessageAsync(e.Message.Chat.Id, "Введите название Файла или нажмите кнопку дата и фото будет присвоено названия текущего времени и даты по МСК", replyMarkup: GetButtonseDate());
+                    await _client.SendTextMessageAsync(e.Message.Chat.Id, "Введите название Файла или нажмите кнопку дата и фото будет присвоено названия текущего времени и даты по МСК", replyMarkup: button.GetButtonseDate());
                     break;
             }
         }
@@ -209,6 +209,7 @@ namespace Mod_9
         /// <param name="a">chat ID</param>
         private async void WorkingWithFile(string type)
         {
+            
             long id = e.Message.Chat.Id;
             string[] fotoList = Directory.GetFiles(@"D:\File\", type);
             Dictionary<int, string> path = new Dictionary<int, string>();
@@ -227,7 +228,7 @@ namespace Mod_9
                     FileInfo file = new FileInfo(item);
                     string data = file.Extension.ToLower();
                     data = string.Join(",", item, data);
-                    var r = _client.SendTextMessageAsync(id, item, replyMarkup: GetInLineButton(data)).Result;
+                    var r = _client.SendTextMessageAsync(id, item, replyMarkup: button.GetInLineButton(data)).Result;
                 }
             }
         }
@@ -237,21 +238,21 @@ namespace Mod_9
         /// <param name="path"></param>
         private void Callback(string path)
         {
+            Download dow = new Download();
             string[] data = path.Split(',');
             switch (data[1])
             {
                 case ".jpeg":
-                    DownloadPhoto(data[0]);
+                    dow.DownloadPhoto(data[0]);
                     break;
                 case ".video":
-                    DownloadVideo(data[0]);
+                    dow.DownloadVideo(data[0]);
                     break;
                 case ".audio":
-                    DownloadAudio(data[0]);
+                    dow.DownloadAudio(data[0]);
                     break;
-
                 default:
-                    DownLoadFile(data[0]);
+                    dow.DownLoadFile(data[0]);
                     break;
             }
             
@@ -284,7 +285,7 @@ namespace Mod_9
             long id = e.Message.Chat.Id;
             foreach (var fileGroup in this.queryGroupByExt)
             {
-                var r = _client.SendTextMessageAsync(id, $"расширение: {fileGroup.Key}", replyMarkup: GetInLineButtonFile(fileGroup.Key)).Result;
+                var r = _client.SendTextMessageAsync(id, $"расширение: {fileGroup.Key}", replyMarkup: button.GetInLineButtonFile(fileGroup.Key)).Result;
             }
             this.callback = true;
         }
@@ -306,123 +307,15 @@ namespace Mod_9
                             string dataDoc = type.Extension.ToLower();
                             dataDoc = string.Join(",", Convert.ToString(item.FullName), dataDoc);
 
-                            var dok = _client.SendTextMessageAsync(e.CallbackQuery.Message.Chat.Id, Convert.ToString(item), replyMarkup: GetInLineButton(Convert.ToString(dataDoc))).Result;
+                            var dok = _client.SendTextMessageAsync(e.CallbackQuery.Message.Chat.Id, Convert.ToString(item), replyMarkup: button.GetInLineButton(Convert.ToString(dataDoc))).Result;
                         }
                     }
                 }
             }
             this.callback = false;
         }
-        /// <summary>
-        /// выгрузка документа
-        /// </summary>
-        /// <param name="v"></param>
-        private async void DownLoadFile(string v)
-        {
-            await _client.SendTextMessageAsync(e.CallbackQuery.Message.Chat.Id, "Загрузка...");
-            using (FileStream downlode = File.OpenRead(v))
-            {
-                await _client.SendDocumentAsync(e.CallbackQuery.Message.Chat.Id, new Telegram.Bot.Types.InputFiles.InputOnlineFile(downlode));
-            }
-        }
-        /// <summary>
-        /// выгрузка аудио записи
-        /// </summary>
-        /// <param name="v"></param>
-        private async void DownloadAudio(string v)
-        {
-            await _client.SendTextMessageAsync(e.CallbackQuery.Message.Chat.Id, "Загрузка...");
-            using (FileStream downlode = File.OpenRead(v))
-            {
-                await _client.SendAudioAsync(e.CallbackQuery.Message.Chat.Id, new Telegram.Bot.Types.InputFiles.InputOnlineFile(downlode));
-            }
-        }
-        /// <summary>
-        /// выгрузка видео
-        /// </summary>
-        /// <param name="v"></param>
-        private async void DownloadVideo(string v)
-        {
-            await _client.SendTextMessageAsync(e.CallbackQuery.Message.Chat.Id, "Загрузка...");
-            using (FileStream downlode = File.OpenRead(v))
-            {
-                await _client.SendVideoAsync(e.CallbackQuery.Message.Chat.Id, new Telegram.Bot.Types.InputFiles.InputOnlineFile(downlode));
-            }
-        }
-        /// <summary>
-        /// выгрузка фото
-        /// </summary>
-        /// <param name="v"></param>
-        private async void DownloadPhoto(string v)
-        {
-            await _client.SendTextMessageAsync(e.CallbackQuery.Message.Chat.Id, "Загрузка...");
-            using (FileStream downlode = File.OpenRead(v))
-            {
-                await _client.SendPhotoAsync(e.CallbackQuery.Message.Chat.Id, new Telegram.Bot.Types.InputFiles.InputOnlineFile(downlode));
-            }
-        }
-        /// <summary>
-        /// кнопка в чате по выбору расширения
-        /// </summary>
-        /// <param name="type"></param>
-        /// <returns></returns>
-        private static IReplyMarkup GetInLineButtonFile(string type)
-        {
-            return new InlineKeyboardMarkup(new InlineKeyboardButton { Text = "выбрать расширение", CallbackData = type });
-        }
-
-        /// <summary>
-        /// кнопка старт
-        /// </summary>
-        /// <returns></returns>
-        private static IReplyMarkup GetButtonseStart()
-        {
-            return new ReplyKeyboardMarkup
-            {
-                Keyboard = new List<List<KeyboardButton>>
-                {
-                    new List<KeyboardButton>{new KeyboardButton { Text = "/start" } }
-                }
-            };
-        }
-        /// <summary>
-        /// вывод кнопки с текущим временем и даты
-        /// </summary>
-        /// <returns></returns>
-        private static IReplyMarkup GetButtonseDate()
-        {
-            return new ReplyKeyboardMarkup
-            {
-                Keyboard = new List<List<KeyboardButton>>
-                {
-                    new List<KeyboardButton>{new KeyboardButton { Text = DateTime.Now.ToString("dd'.'MM'.'yyyy' 'HH'.'mm'.'ss") } }
-                }
-            };
-        }
-        /// <summary>
-        /// кнопка в чате "скачать"
-        /// </summary>
-        /// <param name="path"></param>
-        /// <returns></returns>
-        private static IReplyMarkup GetInLineButton(string path)
-        {
-            return new InlineKeyboardMarkup(new InlineKeyboardButton { Text = "Скачать", CallbackData = path});
-        }
-        /// <summary>
-        /// кнопки для выбора типа поиска файлов
-        /// </summary>
-        /// <returns></returns>
-        private static IReplyMarkup GetButtonse()
-        {
-            return new ReplyKeyboardMarkup
-            {
-                Keyboard = new List<List<KeyboardButton>>
-                {
-                    new List<KeyboardButton>{new KeyboardButton { Text = "Архив Фото"}, new KeyboardButton { Text = "Аудио сообщение"} },
-                    new List<KeyboardButton>{new KeyboardButton { Text = "Документы"}, new KeyboardButton { Text = "Видео"} }
-                }
-            };
-        }
+        
+       
         /// <summary>
         /// метод загрузки данных из ТГ бота на ПК
         /// </summary>
