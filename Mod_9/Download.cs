@@ -9,8 +9,12 @@ namespace Mod_9
 {
     class Download
     {
-        Telegram.Bot.Types.Update e;
-        Telegram.Bot.TelegramBotClient _client;
+        public TelegraBotHelper tel;
+        
+        public Download()
+        {
+            tel = new TelegraBotHelper();
+        }
 
         /// <summary>
         /// выгрузка документа
@@ -18,10 +22,10 @@ namespace Mod_9
         /// <param name="v"></param>
         public async void DownLoadFile(string v)
         {
-            await _client.SendTextMessageAsync(e.CallbackQuery.Message.Chat.Id, "Загрузка...");
+            await tel._client.SendTextMessageAsync(tel.e.CallbackQuery.Message.Chat.Id, "Загрузка...");
             using (FileStream downlode = File.OpenRead(v))
             {
-                await _client.SendDocumentAsync(e.CallbackQuery.Message.Chat.Id, new Telegram.Bot.Types.InputFiles.InputOnlineFile(downlode));
+                await tel._client.SendDocumentAsync(tel.e.CallbackQuery.Message.Chat.Id, new Telegram.Bot.Types.InputFiles.InputOnlineFile(downlode));
             }
         }
         /// <summary>
@@ -30,10 +34,10 @@ namespace Mod_9
         /// <param name="v"></param>
         public async void DownloadAudio(string v)
         {
-            await _client.SendTextMessageAsync(e.CallbackQuery.Message.Chat.Id, "Загрузка...");
+            await tel._client.SendTextMessageAsync(tel.e.CallbackQuery.Message.Chat.Id, "Загрузка...");
             using (FileStream downlode = File.OpenRead(v))
             {
-                await _client.SendAudioAsync(e.CallbackQuery.Message.Chat.Id, new Telegram.Bot.Types.InputFiles.InputOnlineFile(downlode));
+                await tel._client.SendAudioAsync(tel.e.CallbackQuery.Message.Chat.Id, new Telegram.Bot.Types.InputFiles.InputOnlineFile(downlode));
             }
         }
         /// <summary>
@@ -42,10 +46,10 @@ namespace Mod_9
         /// <param name="v"></param>
         public async void DownloadVideo(string v)
         {
-            await _client.SendTextMessageAsync(e.CallbackQuery.Message.Chat.Id, "Загрузка...");
+            await tel._client.SendTextMessageAsync(tel.e.CallbackQuery.Message.Chat.Id, "Загрузка...");
             using (FileStream downlode = File.OpenRead(v))
             {
-                await _client.SendVideoAsync(e.CallbackQuery.Message.Chat.Id, new Telegram.Bot.Types.InputFiles.InputOnlineFile(downlode));
+                await tel._client.SendVideoAsync(tel.e.CallbackQuery.Message.Chat.Id, new Telegram.Bot.Types.InputFiles.InputOnlineFile(downlode));
             }
         }
         /// <summary>
@@ -54,11 +58,35 @@ namespace Mod_9
         /// <param name="v"></param>
         public async void DownloadPhoto(string v)
         {
-            await _client.SendTextMessageAsync(e.CallbackQuery.Message.Chat.Id, "Загрузка...");
+            await tel._client.SendTextMessageAsync(tel.e.CallbackQuery.Message.Chat.Id, "Загрузка...");
             using (FileStream downlode = File.OpenRead(v))
             {
-                await _client.SendPhotoAsync(e.CallbackQuery.Message.Chat.Id, new Telegram.Bot.Types.InputFiles.InputOnlineFile(downlode));
+                await tel._client.SendPhotoAsync(tel.e.CallbackQuery.Message.Chat.Id, new Telegram.Bot.Types.InputFiles.InputOnlineFile(downlode));
             }
+        }
+        /// <summary>
+        /// метод загрузки данных из ТГ бота на ПК
+        /// </summary>
+        /// <param name="fileId"></param>
+        /// <param name="name"></param>
+        public async void UploadingFile()
+        {
+            long id = tel.e.Message.Chat.Id;
+            await tel._client.SendTextMessageAsync(id, "Загрузка");
+            string fileExtension = tel.fileExtension;
+            string filePath = tel.filePath;
+            string fileMessage = tel.fileMessage;
+            tel.fileExtension = null;
+            tel.filePath = null;
+            tel.fileMessage = null;
+            var file = await tel._client.GetFileAsync(filePath);
+            FileStream fs = new FileStream(@"D:\File\" + tel.e.Message.Text + fileExtension, FileMode.Create);
+            await tel._client.DownloadFileAsync(file.FilePath, fs);
+            fs.Close();
+
+            fs.Dispose();
+
+            await tel._client.SendTextMessageAsync(id, $"{fileMessage}");
         }
     }
 }

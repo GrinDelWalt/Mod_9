@@ -14,15 +14,15 @@ namespace Mod_9
 {
     internal class TelegraBotHelper
     {
-        Telegram.Bot.Types.Update e;
+
+        public Telegram.Bot.Types.Update e { get; set; }
         IEnumerable<IGrouping<string, FileInfo>> queryGroupByExt;
-        string fileExtension;
-        string filePath;
-        string fileMessage;
-        bool callback;
-        long id;
-        pButton button;
-        Telegram.Bot.TelegramBotClient _client;
+        public string fileExtension { get; set; }
+        public string filePath { get; set; }
+        public string fileMessage { get; set; }
+        private bool callback;
+        public Button button { get; set; }
+        public Telegram.Bot.TelegramBotClient _client { get; set; }
         private readonly string _token;
         //private Dictionary<long, UserState> _clientStates = new Dictionary<long, UserState>();
         /// <summary>
@@ -34,6 +34,7 @@ namespace Mod_9
             button = new Button();
             this._token = token;
         }
+
         /// <summary>
         /// проверка на наличие новых данных + Timeout
         /// </summary>
@@ -122,7 +123,7 @@ namespace Mod_9
         /// <param name="id"></param>
         private async void WorkingWithArchive(string text)
         {
-
+            Download dow = new Download();
             long id = e.Message.Chat.Id;
             switch (text)
             {
@@ -149,7 +150,7 @@ namespace Mod_9
                     }
                     else
                     {
-                        UploadingFile();
+                        dow.UploadingFile();
                     }
                     break;
             }
@@ -316,29 +317,6 @@ namespace Mod_9
         }
         
        
-        /// <summary>
-        /// метод загрузки данных из ТГ бота на ПК
-        /// </summary>
-        /// <param name="fileId"></param>
-        /// <param name="name"></param>
-        async void UploadingFile()
-        {
-            long id = e.Message.Chat.Id;
-            await _client.SendTextMessageAsync(id, "Загрузка");
-            string fileExtension = this.fileExtension;
-            string filePath = this.filePath;
-            string fileMessage = this.fileMessage;
-            this.fileExtension = null;
-            this.filePath = null;
-            this.fileMessage = null;
-            var file = await _client.GetFileAsync(filePath);
-            FileStream fs = new FileStream(@"D:\File\" + e.Message.Text + fileExtension, FileMode.Create);
-            await _client.DownloadFileAsync(file.FilePath, fs);
-            fs.Close();
-
-            fs.Dispose();
-
-            await _client.SendTextMessageAsync(id, $"{fileMessage}");
-        }
+       
     }
 }
