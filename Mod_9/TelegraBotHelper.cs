@@ -15,14 +15,18 @@ namespace Mod_9
     internal class TelegraBotHelper
     {
 
-        public Telegram.Bot.Types.Update e { get; set; }
+        public Telegram.Bot.Types.Update e;
         IEnumerable<IGrouping<string, FileInfo>> queryGroupByExt;
-        public string fileExtension { get; set; }
-        public string filePath { get; set; }
-        public string fileMessage { get; set; }
+
+        public string fileExtension;
+        public string filePath;
+        public string fileMessage;
         private bool callback;
-        public Button button { get; set; }
-        public Telegram.Bot.TelegramBotClient _client { get; set; }
+
+        public Button button;
+        
+
+        public Telegram.Bot.TelegramBotClient _client;
         private readonly string _token;
         //private Dictionary<long, UserState> _clientStates = new Dictionary<long, UserState>();
         /// <summary>
@@ -32,6 +36,7 @@ namespace Mod_9
         public TelegraBotHelper(string token)
         {
             button = new Button();
+            
             this._token = token;
         }
 
@@ -123,7 +128,7 @@ namespace Mod_9
         /// <param name="id"></param>
         private async void WorkingWithArchive(string text)
         {
-            Download dow = new Download();
+            Download dow = new Download(e, _client, fileExtension, fileMessage, filePath);
             long id = e.Message.Chat.Id;
             switch (text)
             {
@@ -239,7 +244,7 @@ namespace Mod_9
         /// <param name="path"></param>
         private void Callback(string path)
         {
-            Download dow = new Download();
+            Download dow = new Download(e, _client, fileExtension, fileMessage, filePath);
             string[] data = path.Split(',');
             switch (data[1])
             {
