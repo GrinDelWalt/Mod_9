@@ -24,7 +24,8 @@ namespace Mod_9
         private bool callback;
 
         public Button button;
-        
+
+        string path;
 
         public Telegram.Bot.TelegramBotClient _client;
         private readonly string _token;
@@ -45,6 +46,10 @@ namespace Mod_9
         /// </summary>
         internal void GetUpdates()
         {
+            if (path == null)
+            {
+                path = Environment.CurrentDirectory;
+            }
             _client = new Telegram.Bot.TelegramBotClient(_token);
             var me = _client.GetMeAsync().Result;
             if (me != null && !string.IsNullOrEmpty(me.Username))
@@ -139,13 +144,13 @@ namespace Mod_9
                     WorkingWithFile("*.jpeg");
                     break;
                 case "Аудио сообщение":
-                    WorkingWithFile("*.audio");
+                    WorkingWithFile("*.ogg");
                     break;
                 case "Документы":
                     WorkingWithDocuments();
                     break;
                 case "Видео":
-                    WorkingWithFile("*.video");
+                    WorkingWithFile("*.mp4");
                     break;
                 default:
                     if (this.filePath == null)
@@ -217,7 +222,7 @@ namespace Mod_9
         {
             
             long id = e.Message.Chat.Id;
-            string[] fotoList = Directory.GetFiles(@"D:\File\", type);
+            string[] fotoList = Directory.GetFiles(this.path + "\\File", type);
             Dictionary<int, string> path = new Dictionary<int, string>();
             int inckrement = 0;
             if (fotoList.Length == 0)
@@ -233,8 +238,8 @@ namespace Mod_9
 
                     FileInfo file = new FileInfo(item);
                     string data = file.Extension.ToLower();
-                    data = string.Join(",", item, data);
-                    var r = _client.SendTextMessageAsync(id, item, replyMarkup: button.GetInLineButton(data)).Result;
+                    data = string.Join(",", file.Name, data);
+                    var r = _client.SendTextMessageAsync(id, file.Name, replyMarkup: button.GetInLineButton(data)).Result;
                 }
             }
         }
@@ -246,32 +251,32 @@ namespace Mod_9
         {
             Download dow = new Download(e, _client, fileExtension, fileMessage, filePath);
             string[] data = path.Split(',');
-            switch (data[1])
+            if (data.Length == 2)
             {
-                case ".jpeg":
-                    dow.DownloadPhoto(data[0]);
-                    break;
-                case ".video":
-                    dow.DownloadVideo(data[0]);
-                    break;
-                case ".audio":
-                    dow.DownloadAudio(data[0]);
-                    break;
-                default:
-                    dow.DownLoadFile(data[0]);
-                    break;
+                switch (data[1])
+                {
+                    case ".jpeg":
+                        dow.DownloadPhoto(this.path + "\\File\\" + data[0]);
+                        break;
+                    case ".mp4":
+                        dow.DownloadVideo(this.path + "\\File\\" + data[0]);
+                        break;
+                    case ".ogg":
+                        dow.DownloadAudio(this.path + "\\File\\" + data[0]);
+                        break;
+                    default:
+                        dow.DownLoadFile(this.path + "\\File\\" + data[0]);
+                        break;
+                }
             }
-            
         }
         /// <summary>
         /// сортировка по расширениям
         /// </summary>
         private void WorkingWithDocuments()
         {
-            //string[] documents = Directory.GetFiles(@"D:\File\", );
-            string path = @"D:\File\";
-            int trimLength = path.Length;
-            DirectoryInfo dir = new DirectoryInfo(path);
+            
+            DirectoryInfo dir = new DirectoryInfo(Environment.CurrentDirectory + "\\File");
             IEnumerable<FileInfo> fileList = dir.GetFiles("*.*", SearchOption.AllDirectories);
             var queryGroupByExt =
                 from file in fileList
@@ -280,13 +285,13 @@ namespace Mod_9
                 select fileGroup;
 
             this.queryGroupByExt = queryGroupByExt;
-            KeyProcessing(trimLength);
+            KeyProcessing();
         }
         /// <summary>
         /// вывод скиска формата файлов
         /// </summary>
         /// <param name="trimLength"></param>
-        private void KeyProcessing(int trimLength)
+        private void KeyProcessing()
         {
             long id = e.Message.Chat.Id;
             foreach (var fileGroup in this.queryGroupByExt)
@@ -303,25 +308,18 @@ namespace Mod_9
             
             foreach (var fileGroup in this.queryGroupByExt)
             {
-                for (int i = 0; i < this.queryGroupByExt.Count(); i++)
+                if (e.CallbackQuery != null && fileGroup.Key == e.CallbackQuery.Data)
                 {
-                    if (e.CallbackQuery != null && fileGroup.Key == e.CallbackQuery.Data)
+                    foreach (var item in fileGroup)
                     {
-                        foreach (var item in fileGroup)
-                        {
-                            FileInfo type = new FileInfo(Convert.ToString(item));
-                            string dataDoc = type.Extension.ToLower();
-                            dataDoc = string.Join(",", Convert.ToString(item.FullName), dataDoc);
-
-                            var dok = _client.SendTextMessageAsync(e.CallbackQuery.Message.Chat.Id, Convert.ToString(item), replyMarkup: button.GetInLineButton(Convert.ToString(dataDoc))).Result;
-                        }
+                        FileInfo type = new FileInfo(Convert.ToString(item));
+                        string dataDoc = type.Extension.ToLower();
+                        dataDoc = string.Join(",", Convert.ToString(item.Name), dataDoc);
+                        var dok = _client.SendTextMessageAsync(e.CallbackQuery.Message.Chat.Id, Convert.ToString(item), replyMarkup: button.GetInLineButton(dataDoc)).Result;
                     }
                 }
             }
             this.callback = false;
         }
-        
-       
-       
     }
 }

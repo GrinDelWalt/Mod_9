@@ -94,8 +94,6 @@
   <ItemGroup>
     <Compile Include="Button.cs" />
     <Compile Include="Download.cs" />
-    <Compile Include="State.cs" />
-    <Compile Include="UserState.cs" />
     <Compile Include="TelegraBotHelper.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
