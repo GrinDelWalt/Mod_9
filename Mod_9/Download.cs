@@ -90,7 +90,7 @@ namespace Mod_9
             this.filePath = null;
             this.fileMessage = null;
             var file = await _client.GetFileAsync(filePath);
-            FileStream fs = new FileStream(Environment.CurrentDirectory + "\\File" + e.Message.Text + fileExtension, FileMode.Create);
+            FileStream fs = new FileStream(Environment.CurrentDirectory + "\\File\\" + e.Message.Text + fileExtension, FileMode.Create);
             await _client.DownloadFileAsync(file.FilePath, fs);
             fs.Close();
 

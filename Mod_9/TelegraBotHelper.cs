@@ -29,7 +29,6 @@ namespace Mod_9
 
         public Telegram.Bot.TelegramBotClient _client;
         private readonly string _token;
-        //private Dictionary<long, UserState> _clientStates = new Dictionary<long, UserState>();
         /// <summary>
         /// токен
         /// </summary>
