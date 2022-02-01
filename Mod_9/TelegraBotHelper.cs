@@ -160,6 +160,7 @@ namespace Mod_9
                     else
                     {
                         dow.UploadingFile();
+                        this.filePath = null;
                     }
                     break;
             }
@@ -290,12 +291,20 @@ namespace Mod_9
         /// вывод скиска формата файлов
         /// </summary>
         /// <param name="trimLength"></param>
-        private void KeyProcessing()
+        private async void KeyProcessing()
         {
-            long id = e.Message.Chat.Id;
-            foreach (var fileGroup in this.queryGroupByExt)
+            int count = queryGroupByExt.Count();
+            if (count != 0)
             {
-                var r = _client.SendTextMessageAsync(id, $"расширение: {fileGroup.Key}", replyMarkup: button.GetInLineButtonFile(fileGroup.Key)).Result;
+                long id = e.Message.Chat.Id;
+                foreach (var fileGroup in this.queryGroupByExt)
+                {
+                    var r = _client.SendTextMessageAsync(id, $"расширение: {fileGroup.Key}", replyMarkup: button.GetInLineButtonFile(fileGroup.Key)).Result;
+                }
+            }
+            else
+            {
+                await _client.SendTextMessageAsync(e.Message.Chat.Id, "Упс, похоже архив пуст");
             }
             this.callback = true;
         }

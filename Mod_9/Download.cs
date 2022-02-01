@@ -83,12 +83,7 @@ namespace Mod_9
         {
             long id = e.Message.Chat.Id;
             await _client.SendTextMessageAsync(id, "Загрузка");
-            string fileExtension = this.fileExtension;
-            string filePath = this.filePath;
-            string fileMessage = this.fileMessage;
-            this.fileExtension = null;
-            this.filePath = null;
-            this.fileMessage = null;
+          
             var file = await _client.GetFileAsync(filePath);
             FileStream fs = new FileStream(Environment.CurrentDirectory + "\\File\\" + e.Message.Text + fileExtension, FileMode.Create);
             await _client.DownloadFileAsync(file.FilePath, fs);
