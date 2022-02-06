@@ -85,11 +85,20 @@ namespace Mod_9
             await _client.SendTextMessageAsync(id, "Загрузка");
           
             var file = await _client.GetFileAsync(filePath);
-            FileStream fs = new FileStream(Environment.CurrentDirectory + "\\File\\" + e.Message.Text + fileExtension, FileMode.Create);
-            await _client.DownloadFileAsync(file.FilePath, fs);
-            fs.Close();
-
-            fs.Dispose();
+            try
+            {
+                using (FileStream fs = new FileStream(Environment.CurrentDirectory + "\\File\\" + e.Message.Text + fileExtension, FileMode.CreateNew))
+                await _client.DownloadFileAsync(file.FilePath, fs);
+            }
+            catch (IOException)
+            {
+                FileInfo fl = new FileInfo(Environment.CurrentDirectory + "\\File\\" + e.Message.Text + fileExtension);
+                string[] name = fl.Name.Split('.');
+                using (FileStream fs = new FileStream(Environment.CurrentDirectory + "\\File\\" + name[0] + "(1)" + fileExtension, FileMode.CreateNew))
+                await _client.DownloadFileAsync(file.FilePath, fs);
+            }
+            
+            
 
             await _client.SendTextMessageAsync(id, $"{fileMessage}");
         }

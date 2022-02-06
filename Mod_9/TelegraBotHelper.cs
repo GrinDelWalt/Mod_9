@@ -48,6 +48,7 @@ namespace Mod_9
             if (path == null)
             {
                 path = Environment.CurrentDirectory;
+                Directory.CreateDirectory(path + "\\File\\");
             }
             _client = new Telegram.Bot.TelegramBotClient(_token);
             var me = _client.GetMeAsync().Result;
