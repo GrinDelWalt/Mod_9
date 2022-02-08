@@ -92,14 +92,20 @@ namespace Mod_9
             }
             catch (IOException)
             {
-                FileInfo fl = new FileInfo(Environment.CurrentDirectory + "\\File\\" + e.Message.Text + fileExtension);
-                string[] name = fl.Name.Split('.');
-                using (FileStream fs = new FileStream(Environment.CurrentDirectory + "\\File\\" + name[0] + "(1)" + fileExtension, FileMode.CreateNew))
-                await _client.DownloadFileAsync(file.FilePath, fs);
+                for (int i = 1; i < 1000; i++)
+                {
+                    bool fileAvailability = File.Exists(Environment.CurrentDirectory + "\\File\\" + e.Message.Text + $"({i})" + fileExtension);
+                    if (fileAvailability == false)
+                    {
+                        FileInfo fl = new FileInfo(Environment.CurrentDirectory + "\\File\\" + e.Message.Text + fileExtension);
+                        string[] name = fl.Name.Split('.');
+                        await _client.SendTextMessageAsync(id, $"такое имя уже существует создан файл с именем: {name[0] + $"({i})" + fileExtension}");
+                        using (FileStream fs = new FileStream(Environment.CurrentDirectory + "\\File\\" + name[0] + $"({i})" + fileExtension, FileMode.CreateNew))
+                        await _client.DownloadFileAsync(file.FilePath, fs);
+                        break;
+                    }
+                }
             }
-            
-            
-
             await _client.SendTextMessageAsync(id, $"{fileMessage}");
         }
     }
