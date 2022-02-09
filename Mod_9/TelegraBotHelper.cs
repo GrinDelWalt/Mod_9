@@ -133,6 +133,7 @@ namespace Mod_9
         /// <param name="id"></param>
         private async void WorkingWithArchive(string text)
         {
+            callback = false;
             Download dow = new Download(e, _client, fileExtension, fileMessage, filePath);
             long id = e.Message.Chat.Id;
             switch (text)

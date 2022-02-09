@@ -18,17 +18,14 @@ namespace Mod_9
         
         static void Main(string[] args)
         {
-
-
             try
             {
                 ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
 
-                TelegraBotHelper hlp = new TelegraBotHelper(token: File.ReadAllText(@"C:\Users\Гоша\Desktop\Token_bot.txt"));
+                TelegraBotHelper hlp = new TelegraBotHelper(token: File.ReadAllText(Environment.CurrentDirectory + @"\Token_bot.txt"));
                 hlp.GetUpdates();
             }
             catch (Exception ex) { Console.WriteLine(ex.Message); }
-
         }
     }
 }
